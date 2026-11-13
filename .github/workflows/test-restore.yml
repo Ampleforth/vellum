@@ -1,0 +1,31 @@
+name: Test reStore 0.2.0 package
+on:
+  push:
+    branches: [test-restore-0.2.0]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/install-vbuild
+      - run: ./scripts/lint-packages.sh --apkbuild-lint restore
+  package:
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [armv7, aarch64]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/install-vbuild
+      - run: ./scripts/build-package.sh restore "${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: restore-0.2.0-${{ matrix.arch }}
+          path: dist/${{ matrix.arch }}/*.apk
+          if-no-files-found: error
